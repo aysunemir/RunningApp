@@ -1,7 +1,8 @@
-package com.aemir.runningapp
+package com.aemir.runningapp.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.aemir.runningapp.R
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
