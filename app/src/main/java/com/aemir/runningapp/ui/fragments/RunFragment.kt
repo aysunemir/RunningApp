@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.aemir.runningapp.R
+import com.aemir.runningapp.adapters.RunAdapter
 import com.aemir.runningapp.databinding.FragmentRunBinding
 import com.aemir.runningapp.other.Constants.REQUEST_CODE_LOCATION_PERMISSIONS
 import com.aemir.runningapp.other.TrackingUtility
@@ -15,6 +16,7 @@ import com.aemir.runningapp.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionCallbacks {
@@ -22,15 +24,26 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
     private lateinit var binding: FragmentRunBinding
     private val viewModel: MainViewModel by viewModels()
 
+    @Inject
+    lateinit var runAdapter: RunAdapter
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requestPermissions()
+
         binding = FragmentRunBinding.bind(view).apply {
             fab.setOnClickListener {
                 findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
             }
+
+            rvRuns.adapter = runAdapter
         }
+
+        viewModel.runsSortedByDate.observe(viewLifecycleOwner, {
+            runAdapter.submitList(it)
+        })
     }
+
 
     private fun requestPermissions() {
         if (TrackingUtility.hasLocationPermissions(requireContext())) {
