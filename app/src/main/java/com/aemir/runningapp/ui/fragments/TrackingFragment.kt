@@ -74,6 +74,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                 addAllPolylines()
             }
         }
+        // Handle configuration changes
         if (savedInstanceState != null) {
             val cancelTrackingDialogFragment = parentFragmentManager.findFragmentByTag(
                 CANCEL_TRACKING_DIALOG_TAG
@@ -89,6 +90,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         TrackingService.isTracking.observe(viewLifecycleOwner, {
             updateTracking(it)
         })
+
         TrackingService.pathPoints.observe(viewLifecycleOwner, {
             pathPoints = it
             addLatestPolyline()
@@ -102,11 +104,16 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         })
     }
 
+    /**
+     * This method triggers service to start/resume or pause timer and listening location updates
+     */
     private fun toggleRun() {
         if (isTracking) {
+            // Pause service
             menu?.getItem(0)?.isVisible = true
             sendCommandToService(ACTION_PAUSE_SERVICE)
         } else {
+            // Start service
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
     }
@@ -131,6 +138,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         return super.onOptionsItemSelected(item)
     }
 
+    /** Shows cancel tracking dialog when user clicks cancel button from menu. */
     private fun showCancelTrackingDialog() {
         CancelTrackingDialogFragment().apply {
             setYesListener {
@@ -139,12 +147,14 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }.show(parentFragmentManager, CANCEL_TRACKING_DIALOG_TAG)
     }
 
+    /** Stops run and returns to run fragment. */
     private fun stopRun() {
         binding.tvTimer.text = "00:00:00:00"
         sendCommandToService(ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
 
+    /** Listens service state and updates ui. */
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if (!isTracking && curTimeInMillis > 0L) {
@@ -161,6 +171,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    /** Moves camera to user's location when location is updated. */
     private fun moveCameraToUser() {
         if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
             map?.animateCamera(
@@ -172,6 +183,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    /** When run is finished, zooms out map to cover all tracking paths. */
     private fun zoomToSeeWholeTrack() {
         val bounds = LatLngBounds.Builder()
         pathPoints.map { polyline ->
@@ -190,6 +202,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         )
     }
 
+    /** When run is finished, saves run data with map's snapshot to db. */
     private fun endRunAndSaveToDb() {
         map?.snapshot { bmp ->
             var distanceInMeters = 0
@@ -212,6 +225,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    /** Draw path on map when page is brought to foreground (notification click). */
     private fun addAllPolylines() {
         pathPoints.map {
             val polylineOptions = PolylineOptions()
@@ -222,6 +236,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    /** Draws latest path on map when location is updated*/
     private fun addLatestPolyline() {
         if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
             val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
@@ -235,6 +250,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    /** Send action to service to start or stop service */
     private fun sendCommandToService(action: String) =
         Intent(requireContext(), TrackingService::class.java).also {
             it.action = action
